@@ -259,7 +259,7 @@ function clearCache() {
 // Init Function
 function init() {
     try {
-        console.log("Initializing Knowledge Vault...");
+        console.log("Initializing Flash...");
         // DOM Element References
         els = {
             themeNav: document.getElementById('theme-nav'),
