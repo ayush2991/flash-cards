@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Vault | Staff Engineer Flashcards</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+</head>
+
+<body>
+    <div class="bg-gradient">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="glow glow-3"></div>
+    </div>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <button id="settings-btn" class="icon-btn" title="Settings">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                </button>
+            </div>
+            <h1>Knowledge <span class="accent-text">Vault</span></h1>
+        </header>
+
+        <div class="layout-wrapper">
+            <main class="left-panel">
+                <nav id="theme-nav">
+                    <!-- Theme buttons will be injected here -->
+                </nav>
+                <div id="flashcard-container">
+                    <div class="flashcard" id="flashcard">
+                        <div class="flashcard-inner">
+                            <div class="flashcard-front">
+                                <span class="card-label">Question</span>
+                                <div class="text-content">
+                                    <p id="question-text">Select a theme to begin!</p>
+                                </div>
+                            </div>
+                            <div class="flashcard-back">
+                                <span class="card-label">Answer</span>
+                                <div class="text-content">
+                                    <p id="answer-text"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <button id="prev-btn" class="nav-btn" disabled aria-label="Previous card">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m15 18-6-6 6-6" />
+                        </svg>
+                    </button>
+                    <div class="progress-section">
+                        <span id="progress-indicator">Card 0 of 0</span>
+                        <div class="progress-bar-container">
+                            <div id="progress-bar-fill"></div>
+                        </div>
+                    </div>
+                    <button id="next-btn" class="nav-btn" disabled aria-label="Next card">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m9 18 6-6-6-6" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="flip-btn" class="primary-btn">Flip Card</button>
+                    <button id="ai-insight-btn" class="secondary-btn" title="Get Guided Answer">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2v2" />
+                            <path d="m4.93 4.93 1.41 1.41" />
+                            <path d="M2 12h2" />
+                            <path d="m6.34 17.66-1.41 1.41" />
+                            <path d="M12 22v-2" />
+                            <path d="m19.07 19.07-1.41-1.41" />
+                            <path d="M22 12h-2" />
+                            <path d="m17.66 6.34 1.41-1.41" />
+                            <path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
+                        </svg>
+                        Guided Answer
+                    </button>
+                </div>
+            </main>
+
+            <aside id="ai-panel" class="right-panel">
+                <div class="panel-header">
+                    <h2>Guided Answer</h2>
+                    <div class="panel-actions">
+                        <button id="regenerate-btn" class="icon-btn small-btn" title="Regenerate Answer">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                                <path d="M21 3v5h-5" />
+                                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                                <path d="M8 16H3v5" />
+                            </svg>
+                        </button>
+                        <button id="close-panel-btn" class="icon-btn small-btn" title="Close Panel">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 6 6 18M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="ai-content-area">
+                    <div id="ai-placeholder" class="placeholder-text">
+                        <p>Click "Guided Answer" to reveal expert technical depth.</p>
+                    </div>
+                    <div id="ai-loading" class="loading-container hidden">
+                        <div class="spinner"></div>
+                        <p>Generating guided answer...</p>
+                    </div>
+                    <div id="ai-response-container" class="ai-response-text hidden">
+                        <!-- AI Response will be injected here -->
+                    </div>
+                </div>
+                <div class="panel-footer">
+                    <p class="disclaimer">Powered by Gemini AI</p>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="gemini-api-key">Gemini API Key</label>
+                    <input type="password" id="gemini-api-key" placeholder="Paste your API key here...">
+                    <p class="help-text">Your key is stored locally and never sent to our servers.</p>
+                </div>
+                <div class="settings-actions">
+                    <button id="save-settings" class="primary-btn">Save Settings</button>
+                    <button id="clear-cache" class="secondary-btn">Clear Cache</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
