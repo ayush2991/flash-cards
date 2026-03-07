@@ -304,13 +304,30 @@ function initSwipeNavigation() {
         tracking = false;
 
         if (Math.abs(distX) >= SWIPE.threshold && Math.abs(distY) <= SWIPE.restraint) {
-            if (distX < 0) navigateCard(1);
-            if (distX > 0) navigateCard(-1);
+            if (distX < 0) {
+                animateSwipe('left');
+                navigateCard(1);
+            }
+            if (distX > 0) {
+                animateSwipe('right');
+                navigateCard(-1);
+            }
             hideSwipeHint();
         }
     }, { passive: true });
 
     showSwipeHint();
+}
+
+function animateSwipe(direction) {
+    if (!els.flashcard) return;
+    const cls = direction === 'left' ? 'swipe-left' : 'swipe-right';
+    els.flashcard.classList.remove('swipe-left', 'swipe-right');
+    void els.flashcard.offsetWidth;
+    els.flashcard.classList.add(cls);
+    setTimeout(() => {
+        els.flashcard.classList.remove(cls);
+    }, 180);
 }
 
 function showSwipeHint() {
