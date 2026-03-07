@@ -317,6 +317,23 @@ nav button.active {
 
 .flashcard-back { transform: rotateY(180deg); border-top: 2px solid var(--primary); }
 
+.swipe-hint {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.swipe-hint.visible {
+  opacity: 0.7;
+}
+
 .card-label {
   font-family: "Outfit", sans-serif;
   font-size: 0.7rem;

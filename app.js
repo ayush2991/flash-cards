@@ -11,6 +11,7 @@ let currentCardIndex = 0;
 let filteredCards = [];
 let els = {};
 const FONT_LIMITS = { min: 0.95, max: 1.9, step: 0.1 };
+const SWIPE = { threshold: 50, restraint: 60 };
 
 // Logic: Dynamic Loading
 async function loadRegistry() {
@@ -279,6 +280,51 @@ function showOnboardingIfNeeded() {
 function dismissOnboarding() {
     localStorage.setItem('onboarding_seen', 'true');
     toggleModal(els.onboardingModal, false);
+}
+
+function initSwipeNavigation() {
+    if (!els.flashcard) return;
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    els.flashcard.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        tracking = true;
+    }, { passive: true });
+
+    els.flashcard.addEventListener('touchend', (e) => {
+        if (!tracking || !e.changedTouches || e.changedTouches.length !== 1) return;
+        const touch = e.changedTouches[0];
+        const distX = touch.clientX - startX;
+        const distY = touch.clientY - startY;
+        tracking = false;
+
+        if (Math.abs(distX) >= SWIPE.threshold && Math.abs(distY) <= SWIPE.restraint) {
+            if (distX < 0) navigateCard(1);
+            if (distX > 0) navigateCard(-1);
+            hideSwipeHint();
+        }
+    }, { passive: true });
+
+    showSwipeHint();
+}
+
+function showSwipeHint() {
+    if (localStorage.getItem('swipe_hint_seen') === 'true') return;
+    if (window.innerWidth >= 1024) return;
+    els.swipeHint?.classList.add('visible');
+    els.swipeHintBack?.classList.add('visible');
+}
+
+function hideSwipeHint() {
+    if (localStorage.getItem('swipe_hint_seen') === 'true') return;
+    localStorage.setItem('swipe_hint_seen', 'true');
+    els.swipeHint?.classList.remove('visible');
+    els.swipeHintBack?.classList.remove('visible');
 }
 
 function flipCard() {
@@ -621,6 +667,8 @@ async function init() {
             flashcard: document.getElementById('flashcard'),
             questionText: document.getElementById('question-text'),
             answerText: document.getElementById('answer-text'),
+            swipeHint: document.getElementById('swipe-hint'),
+            swipeHintBack: document.getElementById('swipe-hint-back'),
             prevBtn: document.getElementById('prev-btn'),
             nextBtn: document.getElementById('next-btn'),
             progressIndicator: document.getElementById('progress-indicator'),
@@ -665,6 +713,7 @@ async function init() {
         initTheme();
         loadFontSizes();
         initFocusMode();
+        initSwipeNavigation();
 
         // Pre-load marked for snappy first render
         ensureMarkedLoaded();
