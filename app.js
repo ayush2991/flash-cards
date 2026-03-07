@@ -10,6 +10,7 @@ let currentTheme = null;
 let currentCardIndex = 0;
 let filteredCards = [];
 let els = {};
+const FONT_LIMITS = { min: 0.95, max: 1.9, step: 0.1 };
 
 // Logic: Dynamic Loading
 async function loadRegistry() {
@@ -103,8 +104,8 @@ function renderMath(element) {
 // Logic: Theme Switching
 function setTheme(theme) {
     currentTheme = theme;
-    currentCardIndex = 0;
     filteredCards = flashcardsData.filter(card => card.theme === theme);
+    currentCardIndex = getSavedCardIndex();
 
     // Update active state in UI
     const buttons = els.themeNav.querySelectorAll('button');
@@ -117,7 +118,15 @@ function setTheme(theme) {
 
 // Logic: Rendering
 async function renderCard() {
-    if (filteredCards.length === 0) return;
+    if (filteredCards.length === 0) {
+        els.questionText.innerHTML = "Choose a theme above to start practicing. Your progress will be saved per theme.";
+        els.answerText.innerHTML = "";
+        els.prevBtn.disabled = true;
+        els.nextBtn.disabled = true;
+        els.progressIndicator.textContent = "No cards loaded";
+        els.progressBarFill.style.width = "0%";
+        return;
+    }
     const currentCard = filteredCards[currentCardIndex];
 
     els.flashcard.classList.remove('flipped');
@@ -148,10 +157,13 @@ function updateControls() {
 
     const current = currentCardIndex + 1;
     const total = filteredCards.length;
-    els.progressIndicator.textContent = `Card ${current} of ${total}`;
+    const themeLabel = currentTheme || 'Theme';
+    els.progressIndicator.textContent = `${themeLabel} · Card ${current} of ${total}`;
 
     const progressPercent = (current / total) * 100;
     els.progressBarFill.style.width = `${progressPercent}%`;
+
+    saveCardIndex();
 }
 
 // Logic: Theme (Light/Dark)
@@ -200,6 +212,73 @@ function toggleTheme() {
         els.sunIcon?.classList.remove('hidden');
         els.moonIcon?.classList.add('hidden');
     }
+}
+
+function getProgressKey() {
+    if (!currentBankId || !currentTheme) return null;
+    return `progress_${currentBankId}_${currentTheme}`;
+}
+
+function saveCardIndex() {
+    const key = getProgressKey();
+    if (!key) return;
+    localStorage.setItem(key, String(currentCardIndex));
+}
+
+function getSavedCardIndex() {
+    const key = getProgressKey();
+    if (!key) return 0;
+    const raw = localStorage.getItem(key);
+    const idx = raw ? parseInt(raw, 10) : 0;
+    if (Number.isNaN(idx)) return 0;
+    return Math.min(Math.max(idx, 0), Math.max(filteredCards.length - 1, 0));
+}
+
+function applyFontSizes(questionSize, answerSize) {
+    const root = document.documentElement;
+    root.style.setProperty('--question-size', `${questionSize}rem`);
+    root.style.setProperty('--answer-size', `${answerSize}rem`);
+}
+
+function loadFontSizes() {
+    const q = parseFloat(localStorage.getItem('question_font_size'));
+    const a = parseFloat(localStorage.getItem('answer_font_size'));
+    if (!Number.isNaN(q) && !Number.isNaN(a)) {
+        applyFontSizes(q, a);
+    }
+}
+
+function adjustFontSizes(delta) {
+    const styles = getComputedStyle(document.documentElement);
+    const q = parseFloat(styles.getPropertyValue('--question-size')) || 1.55;
+    const a = parseFloat(styles.getPropertyValue('--answer-size')) || 1.25;
+    const nextQ = Math.min(Math.max(q + delta, FONT_LIMITS.min), FONT_LIMITS.max);
+    const nextA = Math.min(Math.max(a + delta, FONT_LIMITS.min), FONT_LIMITS.max);
+    applyFontSizes(nextQ, nextA);
+    localStorage.setItem('question_font_size', String(nextQ));
+    localStorage.setItem('answer_font_size', String(nextA));
+}
+
+function toggleFocusMode() {
+    const isOn = document.body.classList.toggle('focus-mode');
+    localStorage.setItem('focus_mode', isOn ? 'true' : 'false');
+    if (els.focusModeBtn) els.focusModeBtn.classList.toggle('active', isOn);
+}
+
+function initFocusMode() {
+    const isOn = localStorage.getItem('focus_mode') === 'true';
+    if (isOn) document.body.classList.add('focus-mode');
+    if (els.focusModeBtn) els.focusModeBtn.classList.toggle('active', isOn);
+}
+
+function showOnboardingIfNeeded() {
+    if (localStorage.getItem('onboarding_seen') === 'true') return;
+    toggleModal(els.onboardingModal, true);
+}
+
+function dismissOnboarding() {
+    localStorage.setItem('onboarding_seen', 'true');
+    toggleModal(els.onboardingModal, false);
 }
 
 function flipCard() {
@@ -573,11 +652,19 @@ async function init() {
             themeToggleBtn: document.getElementById('theme-toggle-btn'),
             sunIcon: document.querySelector('.sun-icon'),
             moonIcon: document.querySelector('.moon-icon'),
-            rememberApiKey: document.getElementById('remember-api-key')
+            rememberApiKey: document.getElementById('remember-api-key'),
+            fontDecreaseBtn: document.getElementById('font-decrease'),
+            fontIncreaseBtn: document.getElementById('font-increase'),
+            focusModeBtn: document.getElementById('focus-mode-btn'),
+            onboardingModal: document.getElementById('onboarding-modal'),
+            onboardingStart: document.getElementById('onboarding-start'),
+            onboardingClose: document.getElementById('onboarding-close')
         };
 
         // Initialize Theme
         initTheme();
+        loadFontSizes();
+        initFocusMode();
 
         // Pre-load marked for snappy first render
         ensureMarkedLoaded();
@@ -600,6 +687,11 @@ async function init() {
         if (els.closePanelBtn) els.closePanelBtn.addEventListener('click', closeAIPanel);
         if (els.regenerateBtn) els.regenerateBtn.addEventListener('click', () => showAIInsight(true));
         if (els.themeToggleBtn) els.themeToggleBtn.addEventListener('click', toggleTheme);
+        if (els.fontDecreaseBtn) els.fontDecreaseBtn.addEventListener('click', () => adjustFontSizes(-FONT_LIMITS.step));
+        if (els.fontIncreaseBtn) els.fontIncreaseBtn.addEventListener('click', () => adjustFontSizes(FONT_LIMITS.step));
+        if (els.focusModeBtn) els.focusModeBtn.addEventListener('click', toggleFocusMode);
+        if (els.onboardingStart) els.onboardingStart.addEventListener('click', dismissOnboarding);
+        if (els.onboardingClose) els.onboardingClose.addEventListener('click', dismissOnboarding);
 
         if (els.jobUrlBtn) els.jobUrlBtn.addEventListener('click', () => {
             els.generateErrorMsg.classList.add('hidden');
@@ -651,6 +743,10 @@ async function init() {
             if (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag) || document.activeElement?.isContentEditable) {
                 return;
             }
+            if (e.key === 'Escape' && document.body.classList.contains('focus-mode')) {
+                toggleFocusMode();
+                return;
+            }
             if (e.key === ' ') { // More reliable check
                 if (!document.querySelector('.modal.show')) {
                     e.preventDefault();
@@ -667,6 +763,8 @@ async function init() {
             els.bankSelect.value = lastBankId;
             await loadQuestionBank(lastBankId);
         }
+
+        showOnboardingIfNeeded();
 
         console.log("Success: App initialized with dynamic banks.");
     } catch (error) {
