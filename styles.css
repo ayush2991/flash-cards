@@ -718,10 +718,15 @@ body.focus-mode header {
 }
 
 body.focus-mode nav#theme-nav,
-body.focus-mode .controls,
 body.focus-mode .action-buttons {
   opacity: 0.35;
-  pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  body.focus-mode .controls,
+  body.focus-mode .action-buttons {
+    pointer-events: none;
+  }
 }
 
 body.focus-mode #flashcard-container {
@@ -732,9 +737,33 @@ body.focus-mode .right-panel {
   display: none;
 }
 
+body.focus-mode .bg-gradient {
+  opacity: 0.25;
+  transition: opacity var(--theme-transition);
+}
+
+body.focus-mode::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 10, 16, 0.6);
+  pointer-events: none;
+  z-index: 0;
+}
+
 @media (min-width: 1024px) {
   body.focus-mode .left-panel {
     flex: 1;
+  }
+}
+
+@media (max-width: 1023px) {
+  body.focus-mode header {
+    opacity: 0.3;
+  }
+
+  body.focus-mode::after {
+    background: rgba(6, 10, 16, 0.8);
   }
 }
 
