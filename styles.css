@@ -632,6 +632,22 @@ nav button.active {
   line-height: 1.4;
 }
 
+.checkbox-row {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.checkbox-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
 .settings-divider {
   height: 1px;
   background: var(--border-color);

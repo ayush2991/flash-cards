@@ -70,15 +70,19 @@ async function loadQuestionBank(bankId) {
 // Helper: Format AI markdown
 function formatAIResponse(text) {
     if (!text) return '';
-    // Enhanced pre-processing: Add newlines before numerical points (e.g., "1.", "2.") 
+    // Enhanced pre-processing: Add newlines before numerical points (e.g., "1.", "2.")
     // to ensure 'marked' detects them as proper list items even in single-line strings.
     const preprocessed = text.replace(/([.!?])\s+(\d+\.\s+)/g, '$1\n$2');
 
+    let html = preprocessed.replace(/\n/g, '<br>');
     if (window.marked) {
-        return marked.parse(preprocessed);
+        html = marked.parse(preprocessed);
     }
-    // Fallback if marked is not yet loaded
-    return preprocessed.replace(/\n/g, '<br>');
+
+    if (window.DOMPurify) {
+        return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+    }
+    return html;
 }
 
 // Helper: Render LaTeX math
@@ -153,6 +157,7 @@ function updateControls() {
 // Logic: Theme (Light/Dark)
 function initTheme() {
     const savedTheme = localStorage.getItem('app_theme');
+    const hasOverride = localStorage.getItem('app_theme_override') === 'true';
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 
     const applyTheme = (theme) => {
@@ -167,7 +172,7 @@ function initTheme() {
         }
     };
 
-    if (savedTheme) {
+    if (hasOverride && savedTheme) {
         applyTheme(savedTheme);
     } else {
         applyTheme(systemPrefersDark.matches ? 'dark' : 'light');
@@ -185,6 +190,7 @@ function toggleTheme() {
     const isLight = document.documentElement.classList.toggle('light-mode');
     const newTheme = isLight ? 'light' : 'dark';
     localStorage.setItem('app_theme', newTheme);
+    localStorage.setItem('app_theme_override', 'true');
 
     // Update icons
     if (isLight) {
@@ -235,7 +241,7 @@ async function ensureMarkedLoaded() {
 
 // AI logic
 async function showAIInsight(forceRefresh = false) {
-    const apiKey = localStorage.getItem('gemini_api_key');
+    const apiKey = localStorage.getItem('gemini_api_key') || sessionStorage.getItem('gemini_api_key');
     if (!apiKey) {
         alert('Please provide a Gemini API Key in Settings first.');
         toggleModal(els.settingsModal, true);
@@ -258,7 +264,7 @@ async function showAIInsight(forceRefresh = false) {
     // Use shared helper
     await ensureMarkedLoaded();
 
-    const cacheKey = `ai_cache_${currentCard.question}`;
+    const cacheKey = await getCacheKey(currentCard.question);
     const cachedResponse = localStorage.getItem(cacheKey);
 
     if (cachedResponse && !forceRefresh) {
@@ -309,6 +315,7 @@ Please provide a "Guided Answer" that builds on this reference. Explain the "why
             text: text,
             timestamp: Date.now()
         }));
+        updateCacheIndex(cacheKey);
 
         els.aiResponseContainer.innerHTML = formatAIResponse(text);
         renderMath(els.aiResponseContainer);
@@ -329,7 +336,18 @@ async function fetchJobDescription(url) {
     const maxRetries = 2;
     for (let i = 0; i < maxRetries; i++) {
         try {
-            const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+            if (!localStorage.getItem('allorigins_ack')) {
+                const ok = confirm("This will fetch the URL via a third-party proxy (allorigins.win). Continue?");
+                if (!ok) throw new Error("Fetch cancelled by user.");
+                localStorage.setItem('allorigins_ack', 'true');
+            }
+
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000);
+            const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
             if (!response.ok) throw new Error("Failed to fetch");
             const data = await response.json();
             const html = data.contents;
@@ -351,7 +369,7 @@ async function fetchJobDescription(url) {
 }
 
 async function startJobUrlGeneration() {
-    const apiKey = localStorage.getItem('gemini_api_key');
+    const apiKey = localStorage.getItem('gemini_api_key') || sessionStorage.getItem('gemini_api_key');
     if (!apiKey) {
         alert('Please provide a Gemini API Key in Settings first.');
         toggleModal(els.generateModal, false);
@@ -468,8 +486,49 @@ function clearCache() {
     }
     if (confirm(`Are you sure you want to clear ${aiKeys.length} cached guided answers?`)) {
         aiKeys.forEach(key => localStorage.removeItem(key));
+        localStorage.removeItem('ai_cache_index');
         alert('Cache cleared successfully.');
     }
+}
+
+async function getCacheKey(text) {
+    if (window.crypto?.subtle) {
+        const data = new TextEncoder().encode(text);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return `ai_cache_${hashHex}`;
+    }
+    // Fallback: simple stable hash
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+        hash = ((hash << 5) - hash) + text.charCodeAt(i);
+        hash |= 0;
+    }
+    return `ai_cache_${Math.abs(hash)}`;
+}
+
+function updateCacheIndex(cacheKey) {
+    const now = Date.now();
+    const maxEntries = 50;
+    const ttlMs = 1000 * 60 * 60 * 24 * 14; // 14 days
+    const indexRaw = localStorage.getItem('ai_cache_index');
+    const index = indexRaw ? JSON.parse(indexRaw) : {};
+    index[cacheKey] = now;
+
+    const entries = Object.entries(index)
+        .filter(([, ts]) => now - ts <= ttlMs)
+        .sort((a, b) => b[1] - a[1]);
+
+    const keep = entries.slice(0, maxEntries);
+    const keepKeys = new Set(keep.map(([key]) => key));
+
+    entries.slice(maxEntries).forEach(([key]) => localStorage.removeItem(key));
+    Object.keys(index).forEach((key) => {
+        if (!keepKeys.has(key)) delete index[key];
+    });
+
+    localStorage.setItem('ai_cache_index', JSON.stringify(index));
 }
 
 // Init Function
@@ -513,7 +572,8 @@ async function init() {
             generateProgressFill: document.getElementById('generate-progress-fill'),
             themeToggleBtn: document.getElementById('theme-toggle-btn'),
             sunIcon: document.querySelector('.sun-icon'),
-            moonIcon: document.querySelector('.moon-icon')
+            moonIcon: document.querySelector('.moon-icon'),
+            rememberApiKey: document.getElementById('remember-api-key')
         };
 
         // Initialize Theme
@@ -553,7 +613,14 @@ async function init() {
             els.saveSettingsBtn.addEventListener('click', () => {
                 const key = els.geminiApiKeyInput.value.trim();
                 if (key) {
-                    localStorage.setItem('gemini_api_key', key);
+                    const remember = !!els.rememberApiKey?.checked;
+                    if (remember) {
+                        localStorage.setItem('gemini_api_key', key);
+                        sessionStorage.removeItem('gemini_api_key');
+                    } else {
+                        sessionStorage.setItem('gemini_api_key', key);
+                        localStorage.removeItem('gemini_api_key');
+                    }
                     alert('Settings saved.');
                     toggleModal(els.settingsModal, false);
                 } else {
@@ -573,10 +640,17 @@ async function init() {
             if (e.target.classList.contains('modal')) toggleModal(e.target, false);
         });
 
-        const savedKey = localStorage.getItem('gemini_api_key');
+        const savedLocalKey = localStorage.getItem('gemini_api_key');
+        const savedSessionKey = sessionStorage.getItem('gemini_api_key');
+        const savedKey = savedLocalKey || savedSessionKey;
         if (savedKey && els.geminiApiKeyInput) els.geminiApiKeyInput.value = savedKey;
+        if (els.rememberApiKey) els.rememberApiKey.checked = !!savedLocalKey;
 
         document.addEventListener('keydown', (e) => {
+            const activeTag = document.activeElement?.tagName;
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag) || document.activeElement?.isContentEditable) {
+                return;
+            }
             if (e.key === ' ') { // More reliable check
                 if (!document.querySelector('.modal.show')) {
                     e.preventDefault();
