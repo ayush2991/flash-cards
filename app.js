@@ -47,7 +47,9 @@ async function loadQuestionBank(bankId) {
             els.themeNav.innerHTML = ''; // Clear
             themes.forEach(theme => {
                 const btn = document.createElement('button');
-                btn.textContent = theme;
+                const span = document.createElement('span');
+                span.textContent = theme;
+                btn.appendChild(span);
                 btn.dataset.theme = theme;
                 btn.addEventListener('click', () => setTheme(theme));
                 els.themeNav.appendChild(btn);
