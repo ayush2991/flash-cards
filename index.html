@@ -34,10 +34,16 @@
             </div>
             <div class="header-left">
                 <h1>Fla<span class="accent-text">sh</span></h1>
-                <div class="bank-selector-wrapper">
-                    <select id="bank-select" class="bank-select">
-                        <option value="" disabled selected>Loading banks...</option>
-                    </select>
+                <div class="picker-container" style="display: flex; gap: 8px; align-items: center;">
+                    <div class="bank-selector-wrapper">
+                        <select id="bank-select" class="bank-select">
+                            <option value="" disabled selected>Loading banks...</option>
+                        </select>
+                    </div>
+                    <button id="job-url-btn" class="secondary-btn" style="padding: 8px 16px; font-size: 0.85rem;" title="Generate from Job URL">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        Job URL
+                    </button>
                 </div>
             </div>
         </header>
@@ -143,6 +149,44 @@
                     <p class="disclaimer">Powered by Gemini AI</p>
                 </div>
             </aside>
+        </div>
+    </div>
+
+    <!-- Generate Modal -->
+    <div id="generate-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Generate from Job URL</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            
+            <!-- Generation Input Form -->
+            <div id="generate-input-view" class="modal-body">
+                <div class="form-group">
+                    <label for="generate-source-input">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        Job Description URL
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="generate-source-input" placeholder="e.g. https://openai.com/careers/...">
+                    </div>
+                </div>
+                <div class="settings-divider"></div>
+                <div class="settings-actions">
+                    <button id="generate-start-btn" class="primary-btn full-width">Generate Flashcards</button>
+                    <p id="generate-error-msg" class="danger-btn-text hidden" style="cursor: default; text-decoration: none;"></p>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="generate-loading-view" class="modal-body hidden" style="text-align: center; padding: 48px 32px;">
+                <div class="spinner-large" style="margin: 0 auto 24px;"></div>
+                <h3 id="generate-status-title" style="margin-bottom: 8px; font-family: 'Outfit', sans-serif;">Analyzing content...</h3>
+                <p id="generate-status-text" style="color: var(--text-muted); font-size: 0.9rem;">Building questions and themes...</p>
+                <div class="progress-bar-container" style="margin-top: 24px; height: 6px; background: rgba(255,255,255,0.1);">
+                    <div id="generate-progress-fill" style="height: 100%; width: 5%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.3s ease;"></div>
+                </div>
+            </div>
         </div>
     </div>
 

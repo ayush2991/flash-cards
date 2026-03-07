@@ -36,8 +36,12 @@ async function loadQuestionBank(bankId) {
     if (!bank) return;
 
     try {
-        const response = await fetch(bank.path);
-        flashcardsData = await response.json();
+        if (bank.data) {
+            flashcardsData = bank.data;
+        } else {
+            const response = await fetch(bank.path);
+            flashcardsData = await response.json();
+        }
         currentBankId = bankId;
         localStorage.setItem('last_bank_id', bankId);
 
@@ -272,6 +276,134 @@ Please provide a "Guided Answer" that builds on this reference. Explain the "why
     }
 }
 
+// Generation Logic
+async function fetchJobDescription(url) {
+    if (!url.startsWith('http')) return url; // Treat as direct topic text if not a URL
+
+    const maxRetries = 2;
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+            if (!response.ok) throw new Error("Failed to fetch");
+            const data = await response.json();
+            const html = data.contents;
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const removes = doc.querySelectorAll('script, style, noscript, nav, footer, header, svg, img');
+            removes.forEach(s => s.remove());
+
+            const text = doc.body.textContent.replace(/\s+/g, ' ').trim();
+            if (text.length > 100) return text;
+            throw new Error("Text too short or missing");
+        } catch (e) {
+            console.error("Fetch try failed:", e);
+            if (i === maxRetries - 1) throw new Error("Failed to securely fetch content from URL. You may need to paste the text directly.");
+        }
+    }
+}
+
+async function startJobUrlGeneration() {
+    const apiKey = localStorage.getItem('gemini_api_key');
+    if (!apiKey) {
+        alert('Please provide a Gemini API Key in Settings first.');
+        toggleModal(els.generateModal, false);
+        toggleModal(els.settingsModal, true);
+        return;
+    }
+
+    const inputVal = els.generateSourceInput.value.trim();
+    if (!inputVal) {
+        els.generateErrorMsg.textContent = "Please enter a URL or topic.";
+        els.generateErrorMsg.classList.remove('hidden');
+        return;
+    }
+
+    els.generateErrorMsg.classList.add('hidden');
+    els.generateInputView.classList.add('hidden');
+    els.generateLoadingView.classList.remove('hidden');
+    els.generateStatusTitle.textContent = "Analyzing content...";
+    els.generateStatusText.textContent = inputVal.startsWith('http') ? "Fetching URL..." : "Preparing topic...";
+    els.generateProgressFill.style.width = "10%";
+
+    try {
+        const textContext = await fetchJobDescription(inputVal);
+        let sourceName = inputVal;
+        if (inputVal.startsWith('http')) {
+            try { sourceName = new URL(inputVal).hostname.replace('www.', ''); } catch (e) { }
+        } else {
+            sourceName = inputVal.substring(0, 20);
+        }
+
+        els.generateStatusText.textContent = "Generating themes and questions...";
+        els.generateProgressFill.style.width = "40%";
+
+        const { GoogleGenAI } = await import("https://esm.run/@google/genai");
+        const ai = new GoogleGenAI({ apiKey });
+
+        const prompt = `Based on the following job description or topic context, generate a study flashcard deck for an interview.
+Create exactly 4 to 5 distinct technical or behavioral themes. For each theme, generate 8 to 12 flashcards.
+Each flashcard must contain a challenging but realistic 'question' (that could be asked in an interview) and a detailed, comprehensive 'answer'.
+
+The output MUST be a strict JSON array of objects, with NO surrounding markdown or text blocks like \`\`\`json.
+Format EXACTLY like: [{"theme": "System Design", "question": "...", "answer": "..."}, ...]
+
+CONTEXT:
+${textContext.substring(0, 15000)}`;
+
+        const result = await ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents: prompt,
+            config: {
+                systemInstruction: "You are an expert technical interviewer. Output valid raw JSON only.",
+                responseMimeType: "application/json"
+            }
+        });
+
+        els.generateProgressFill.style.width = "90%";
+        els.generateStatusText.textContent = "Finalizing deck...";
+
+        let jsonText = result.text.trim();
+        if (jsonText.startsWith('```json')) jsonText = jsonText.replace(/^```json/, '');
+        if (jsonText.endsWith('```')) jsonText = jsonText.replace(/```$/, '');
+        jsonText = jsonText.trim();
+
+        const newFlashcards = JSON.parse(jsonText);
+        if (!Array.isArray(newFlashcards) || newFlashcards.length === 0) throw new Error("AI returned invalid format");
+
+        const newBankId = 'custom_' + Date.now();
+        const newBankName = `AI: ${sourceName}`;
+
+        questionBanksRegistry.push({
+            id: newBankId,
+            name: newBankName,
+            data: newFlashcards
+        });
+
+        const option = document.createElement('option');
+        option.value = newBankId;
+        option.textContent = newBankName;
+        els.bankSelect.appendChild(option);
+
+        els.bankSelect.value = newBankId;
+        await loadQuestionBank(newBankId);
+
+        toggleModal(els.generateModal, false);
+
+        els.generateSourceInput.value = '';
+        els.generateInputView.classList.remove('hidden');
+        els.generateLoadingView.classList.add('hidden');
+
+    } catch (e) {
+        console.error("Generation error:", e);
+        els.generateErrorMsg.textContent = "Error: " + e.message;
+        els.generateErrorMsg.classList.remove('hidden');
+        els.generateInputView.classList.remove('hidden');
+        els.generateLoadingView.classList.add('hidden');
+    }
+}
+
 function closeAIPanel() {
     if (window.innerWidth >= 1024) {
         els.aiPanel.classList.add('hidden-panel');
@@ -322,7 +454,17 @@ async function init() {
             aiPanel: document.getElementById('ai-panel'),
             aiPlaceholder: document.getElementById('ai-placeholder'),
             closePanelBtn: document.getElementById('close-panel-btn'),
-            regenerateBtn: document.getElementById('regenerate-btn')
+            regenerateBtn: document.getElementById('regenerate-btn'),
+            jobUrlBtn: document.getElementById('job-url-btn'),
+            generateModal: document.getElementById('generate-modal'),
+            generateSourceInput: document.getElementById('generate-source-input'),
+            generateStartBtn: document.getElementById('generate-start-btn'),
+            generateErrorMsg: document.getElementById('generate-error-msg'),
+            generateInputView: document.getElementById('generate-input-view'),
+            generateLoadingView: document.getElementById('generate-loading-view'),
+            generateStatusTitle: document.getElementById('generate-status-title'),
+            generateStatusText: document.getElementById('generate-status-text'),
+            generateProgressFill: document.getElementById('generate-progress-fill')
         };
 
         // Pre-load marked for snappy first render
@@ -345,6 +487,14 @@ async function init() {
         if (els.clearCacheBtn) els.clearCacheBtn.addEventListener('click', clearCache);
         if (els.closePanelBtn) els.closePanelBtn.addEventListener('click', closeAIPanel);
         if (els.regenerateBtn) els.regenerateBtn.addEventListener('click', () => showAIInsight(true));
+
+        if (els.jobUrlBtn) els.jobUrlBtn.addEventListener('click', () => {
+            els.generateErrorMsg.classList.add('hidden');
+            els.generateInputView.classList.remove('hidden');
+            els.generateLoadingView.classList.add('hidden');
+            toggleModal(els.generateModal, true);
+        });
+        if (els.generateStartBtn) els.generateStartBtn.addEventListener('click', startJobUrlGeneration);
 
         if (els.saveSettingsBtn) {
             els.saveSettingsBtn.addEventListener('click', () => {
