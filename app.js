@@ -203,6 +203,7 @@ async function showAIInsight(forceRefresh = false) {
     }
 
     if (els.aiPlaceholder) els.aiPlaceholder.classList.add('hidden');
+    els.aiResponseContainer.innerHTML = ''; // Always clear previous content
 
     // Use shared helper
     await ensureMarkedLoaded();
@@ -217,6 +218,7 @@ async function showAIInsight(forceRefresh = false) {
             renderMath(els.aiResponseContainer);
             els.aiLoading.classList.add('hidden');
             els.aiResponseContainer.classList.remove('hidden');
+            if (els.aiPlaceholder) els.aiPlaceholder.classList.add('hidden'); // Redundant check for safety
             console.log("Serving from cache:", currentCard.question);
             return;
         } catch (e) {

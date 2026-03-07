@@ -172,6 +172,15 @@ nav button {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Force hardware acceleration for paint stability */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+nav button span {
+  display: inline-block;
+  pointer-events: none;
 }
 
 nav button:hover {
@@ -367,6 +376,8 @@ nav button.active {
 .disclaimer { font-size: 0.75rem; color: var(--text-muted); font-style: italic; }
 
 /* Global UI Elements */
+.hidden { display: none !important; }
+
 .icon-btn {
   background: var(--glass-bg); border: 1px solid var(--glass-border); width: 44px; height: 44px;
   border-radius: 50%; color: white; display: flex; justify-content: center; align-items: center;
@@ -381,13 +392,107 @@ nav button.active {
   background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); justify-content: center; align-items: center;
 }
 .modal.show { display: flex; }
-.modal-content { background: var(--card-bg); border-radius: var(--radius-lg); width: 90%; max-width: 500px; overflow: hidden; }
-.modal-header { padding: 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-.modal-body { padding: 24px; }
-.form-group { margin-bottom: 20px; }
-.form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-muted); }
-.form-group input { width: 100%; background: #000; border: 1px solid var(--glass-border); padding: 12px; border-radius: 8px; color: white; }
-.close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+.modal-content { 
+  background: var(--card-bg); 
+  border-radius: var(--radius-lg); 
+  width: 90%; 
+  max-width: 440px; 
+  overflow: hidden; 
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--glass-border);
+}
+.modal-header { 
+  padding: 24px 32px; 
+  border-bottom: 1px solid var(--border-color); 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+}
+.modal-header h2 {
+  font-family: "Outfit", sans-serif;
+  font-weight: 600;
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+}
+.modal-body { padding: 32px; }
+.form-group { margin-bottom: 24px; }
+.form-group label { 
+  display: flex; 
+  align-items: center; 
+  margin-bottom: 10px; 
+  font-weight: 600; 
+  color: var(--text-main); 
+  font-size: 0.9rem;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.form-group input { 
+  width: 100%; 
+  background: rgba(0, 0, 0, 0.4); 
+  border: 1px solid var(--glass-border); 
+  padding: 14px 16px; 
+  border-radius: 12px; 
+  color: white; 
+  font-family: "Inter", sans-serif;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+
+.help-text { 
+  margin-top: 12px; 
+  font-size: 0.8rem; 
+  color: var(--text-muted); 
+  display: flex; 
+  align-items: center;
+  line-height: 1.4;
+}
+
+.settings-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 8px 0 24px;
+}
+
+.settings-actions { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 16px; 
+  align-items: center;
+}
+
+.full-width { width: 100%; }
+
+.danger-btn-text {
+  background: none;
+  border: none;
+  color: #fca5a5;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+}
+
+.danger-btn-text:hover {
+  opacity: 1;
+  color: #ef4444;
+  text-decoration: underline;
+}
+
+.close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; transition: color 0.2s ease; }
+.close-btn:hover { color: white; }
 
 /* Desktop Specifics (Large Screens) */
 @media (min-width: 1024px) {
@@ -439,7 +544,14 @@ nav button.active {
     -webkit-overflow-scrolling: touch;
   }
   nav#theme-nav::-webkit-scrollbar { display: none; }
-  nav button { flex: 0 0 auto; padding: 8px 16px; font-size: 0.8rem; }
+  nav button { 
+    flex: 0 0 auto; 
+    padding: 8px 16px; 
+    font-size: 0.8rem;
+    /* Avoid backdrop-filter issues in scrollable containers on mobile */
+    backdrop-filter: none;
+    background: rgba(30, 30, 35, 0.9);
+  }
 
   #flashcard-container { height: 380px; }
   .flashcard-front, .flashcard-back { padding: 24px; }
