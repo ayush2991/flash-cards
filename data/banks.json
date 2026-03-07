@@ -1,0 +1,20 @@
+[
+  {
+    "id": "bridgewater-mle",
+    "name": "Bridgewater MLE",
+    "description": "ML, Time Series, and Infrastructure for AIA Labs.",
+    "path": "data/bridgewater-mle.json"
+  },
+  {
+    "id": "staff-engineer",
+    "name": "Staff Engineer",
+    "description": "Deep technical topics for senior and staff level roles.",
+    "path": "data/staff-engineer.json"
+  },
+  {
+    "id": "retrieval-search",
+    "name": "OpenAI Applied AI Retrieval & Search",
+    "description": "Deep dive into Information Retrieval, RAG, and Search Infra.",
+    "path": "data/retrieval-search.json"
+  }  
+]

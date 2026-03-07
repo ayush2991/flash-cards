@@ -1,0 +1,527 @@
+[
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "Explain the bias-variance tradeoff and how it manifests in real-world ML systems.",
+    "answer": "The bias-variance tradeoff describes the tension between a model's ability to minimize errors from erroneous assumptions (Bias) vs. its sensitivity to small fluctuations in the training set (Variance). In practice, high bias leads to underfitting (missing signal), while high variance leads to overfitting (modeling noise/outliers). In finance, this is critical because market signal is sparse; low-complexity models are often preferred to avoid 'memorizing' historical anomalies that won't repeat."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "Compare gradient boosting, random forests, and neural networks. When would you prefer each?",
+    "answer": "Gradient Boosting (e.g., XGBoost) builds trees sequentially to fix errors of previous ones; it's often the SOTA for tabular data. Random Forests build trees in parallel to reduce variance via bagging; they are more robust to outliers and less prone to overfitting. Neural Networks excel at unstructured data (images/text) or complex non-linear sequence modeling (Transformers) but require significantly more data and tuning. In a hedge fund, GBDT is the baseline for features, while NNs are used for 'alpha' discovery in raw time series."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "Explain the role of regularization (L1, L2, dropout) and how it impacts model generalization.",
+    "answer": "L1 (Lasso) adds an absolute-value penalty, encouraging sparsity (zeroing out features), making it useful for feature selection. L2 (Ridge) adds a squared penalty, discouraging large weights to prevent overfitting. Dropout randomly deactivates neurons during training, forcing the network to learn redundant representations. All three shift the focus from the training data's specific noise to the general underlying signal."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "Why do deep networks sometimes generalize well despite being overparameterized?",
+    "answer": "This is the 'Double Descent' phenomenon. Beyond a certain complexity, the optimization landscape becomes smooth, and SGD acts as an implicit regularizer, finding 'flat minima' which are empirically more robust. Additionally, the inductive bias of architectures (like CNNs or Transformers) constrains the hypothesis space in a way that aligns with the structure of real-world data."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "Explain how batch normalization works and why it stabilizes training.",
+    "answer": "Batch Norm normalizes the inputs of each layer to have zero mean and unit variance across a batch. This reduces 'internal covariate shift,' allowing for higher learning rates and faster convergence by keeping activations within the non-saturated regions of activation functions (like ReLU or sigmoid)."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "Compare SGD, Adam, and LAMB optimizers. What are the tradeoffs?",
+    "answer": "SGD is simple and generalizes well but is slow to converge. Adam uses adaptive moment estimation (first and second moments) for fast convergence in complex landscapes. LAMB (Layer-wise Adaptive Moments for Batch training) is designed for 'massive' batches (common in NLP/large-scale fin), stabilizing training by scaling learning rates layer-by-layer based on norm ratios."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "What causes vanishing or exploding gradients?",
+    "answer": "Vanishing gradients occur when small gradients are multiplied repeatedly in deep chains (common with sigmoid/tanh), causing early layers to stop learning. Exploding gradients occur when large weights or poorly initialized networks cause gradients to grow exponentially (common in RNNs). Mitigations include ReLU, Batch Norm, Gradient Clipping, and Skip Connections (ResNets)."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "How would you debug a neural network that refuses to converge?",
+    "answer": "1. Overfit a single batch: If the model can't get 0 loss on 5 samples, there's a bug in the code/architecture. 2. Monitor Gradient Norms: Check for vanishing/exploding. 3. Check Initialization: Xavier/He init. 4. Reduce Learning Rate: Too high LR causes divergence. 5. Sanity check data: Ensure inputs are normalized and labels are correct."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "How do learning rate schedules influence convergence?",
+    "answer": "LR schedules (like Linear Decay or Cosine Annealing) help the model take large steps initially to escape local minima and smaller steps later to settle into a precise global minimum. 'Warm-up' periods are also critical for stabilizing Adam/Transformers early in training."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "When does second-order optimization become useful?",
+    "answer": "Second-order methods (like L-BFGS) use Hessian information (curvature) to reach the optimum in fewer steps. They are useful for small, high-precision problems or when the loss surface is extremely ill-conditioned, but they are usually too memory-intensive for modern deep learning at scale."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "How do you diagnose overfitting vs underfitting?",
+    "answer": "Check the gap between Training and Validation loss. High Train Loss = Underfitting. Low Train Loss but High Val Loss = Overfitting. Use Learning Curves: if the lines remain far apart as data increases, you need more regularization or a simpler model; if they converge at a poor value, you need a more complex model."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "What tools do you use to understand feature importance or model interpretability?",
+    "answer": "1. SHAP (Shapley Additive Explanations): Unified measure of feature contribution based on game theory. 2. Permutation Importance: Measures drop in performance when a feature is shuffled. 3. Lime: Explains individual predictions. 4. Integrated Gradients: For deep networks. Interpretability is non-negotiable in finance for risk management."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "How would you detect data leakage?",
+    "answer": "1. Performance is 'too good to be true' (e.g., 99% accuracy in markets). 2. Feature correlation with targets: Check if a feature's value only becomes known *after* the target event. 3. Time-shuffle test: If the model works better on shuffled data than chronological data, it's likely using 'future' information."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "How do you determine whether a model is learning signal vs noise?",
+    "answer": "Use out-of-time (OOT) validation and 'Purged Cross-Validation'. If the model generalizes across different economic regimes/years, it has likely found signal. Additionally, check 'Feature Sensitivity': if the model relies solely on a few noisy high-frequency features, it's likely overfitting."
+  },
+  {
+    "theme": "ML Foundations & Modeling",
+    "question": "How would you evaluate whether a model is robust to regime shifts?",
+    "answer": "Use 'Stress Testing' on historical structural breaks (e.g., 2008 crash, 2020 COVID). If the model's error distribution pivots sharply during these periods, it is not robust. Techniques like adversarial training or domain adaptation can help build models that generalizes across shifting distributions."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "What makes financial data fundamentally different from standard ML datasets?",
+    "answer": "1. Non-stationarity: The 'rules' change over time (regime shifts). 2. Low Signal-to-Noise Ratio (SNR): Market trends are buried in massive noise. 3. Data Leakage (Look-ahead bias): Information flows chronologically. 4. Sample Independence: Market observations are highly correlated, breaking i.i.d. assumptions."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "Explain non-stationarity and why it is problematic for ML models.",
+    "answer": "Non-stationarity means the statistical properties (mean, variance) change over time. A model trained on 2010 data may fail in 2024 because the market structure, interest rates, or correlations have evolved. This makes traditional 'static' validation misleading; models must be adaptive or trained on stationary transformations (like log-returns)."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "Compare ARIMA, state space models, and deep sequence models.",
+    "answer": "ARIMA is linear and focuses on autocorrelation; it's robust but limited. State Space Models (e.g., Kalman Filters) allow for latent variables and time-varying parameters. Deep Sequence Models (LSTMs/Transformers) capture complex long-term dependencies but require massive data and are prone to overfitting in noisy financial environments."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "What is look-ahead bias and how do you prevent it?",
+    "answer": "Look-ahead bias occurs when future information is accidentally used in training (e.g., using 'Close price' of today to predict 'Open price' of today). Prevent it by strictly enforcing timestamp-based data splits and using 'Point-in-Time' databases that record exactly when data was known to the world."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "What is survivorship bias?",
+    "answer": "Survivorship bias occurs when you only analyze 'current' entities (like the S&P 500 members today) and exclude those that went bankrupt or were delisted. This leads to artificially high returns in backtests. You must use 'delisting-aware' datasets that include the full history of all assets, even failed ones."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "How would you model long-range dependencies in market data?",
+    "answer": "Transformers with attention mechanisms are the current SOTA for long-range context. For financial data, 'Temporal Convolutional Networks' (TCNs) are also popular as they provide a stable, causal way to look back over long windows without the vanishing gradient issues of standard RNNs."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "Compare RNNs, LSTMs, Transformers, and TCNs for time series.",
+    "answer": "RNNs suffer from vanishing gradients. LSTMs use 'gates' to preserve memory longer. Transformers use 'attention' to look at every time step simultaneously; they are faster but lack native order awareness (require positional encoding). TCNs use dilated convolutions for long receptive fields with causality. In markets, LSTMs/TCNs are often more robust to noise than wide Transformers."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "What techniques help detect structural breaks in markets?",
+    "answer": "1. Chow Test: A statistical test for parameter stability. 2. CUSUM: Cumulative Sum control charts to track drift in residuals. 3. Change Point Detection (CPD) algorithms. 4. Hidden Markov Models (HMMs): To explicitly model discrete shifts between 'regimes' (e.g., Bull vs Bear)."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "How would you design a model predicting cross-sectional asset returns?",
+    "answer": "Use a multi-target regression where you input features for all assets in a universe (e.g., momentum, value metrics) and predict their relative rank or excess return over the benchmark. A common approach is a 'Factor Model' integrated with a GBDT or NN that learns non-linear factor interactions."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "How do you incorporate macro data and market data together?",
+    "answer": "Use a 'Hierarchical Model': macro data (often low-frequency like GDP/CPI) acts as a 'global context' feature, while market data (high-frequency ticks/volume) acts as the 'local signal'. Multi-modal fusion or 'Conditional Embedding' layers can help the model adjust its signal interpretation based on the macro environment."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "How do you design a backtesting framework?",
+    "answer": "A robust backtest must: 1. Use Point-in-Time data. 2. Include accurate Transaction Costs (Slippage/Commissions). 3. Simulate realistic execution (e.g., VWAP). 4. Use 'Walk-Forward' validation (continuously re-training as time moves) rather than a single static split. 5. Include 'Stress Test' scenarios for low-liquidity regimes."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "Why is random train/test splitting inappropriate for time series?",
+    "answer": "Random splitting violates the temporal order and causes 'leakage'—the model would train on data from the future to predict the past. It also fails to account for the high autocorrelation in time series, leading to massive overfitting that won't hold in a production chronological environment."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "How do you detect overfitting to historical market regimes?",
+    "answer": "Cross-validation should be done over distinct economic periods. If a model performs well in 2012-2019 (low volatility) but fails in 2008 or 2020 (high volatility), it has overfit the regime. 'Combinatorial Purged CV' (Marcos Lopez de Prado) is a advanced technique used to address this by removing overlapping samples."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "What metrics best measure predictive performance in trading models?",
+    "answer": "Beyond MSE/MAE, we care about: 1. Information Coefficient (IC): Correlation between predictions and actual returns. 2. Sharpe/Information Ratio: Risk-adjusted returns. 3. Maximum Drawdown (MDD): Worst-case loss. 4. Hit Ratio: % of profitable trades. In finance, IC is often the most direct measure of 'Skill'."
+  },
+  {
+    "theme": "Time Series & Finance",
+    "question": "How would you incorporate risk constraints into model evaluation?",
+    "answer": "Use a 'Custom Loss Function' that penalizes large drawdowns or volatility. Alternatively, evaluate the model *after* passing it through a 'Portfolio Optimizer' that enforces sector, factor, and liquidity constraints. A model that makes millions but takes massive idiosyncratic risk is often worse than a steady, lower-return model."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "Describe the full lifecycle of an ML model from research to production.",
+    "answer": "1. Exploration/EDA on historical data. 2. Experimentation (Backtesting/Val). 3. Reproducibility Review (Code audit). 4. Integration (Feature pipelines/API). 5. Shadow Deployment (No-risk live testing). 6. Canary Rollout. 7. Monitoring & Retraining loops. Every step must be versioned and traceable."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "What are common pitfalls when moving research models into production?",
+    "answer": "1. Training-Serving Skew: Features calculated differently in batch vs real-time. 2. Latency: Research models being too heavy for production SLAs. 3. Data Drift: Production data distribution differing from the backtest. 4. Siloed code: Research 'notebook-ware' not being production-ready (lacking tests/error handling)."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "How do you design reproducible ML experiments?",
+    "answer": "1. Seed all random numbers. 2. Version-control everything (Code, Data, Weights, Hyperparameters). 3. Use Containerization (Docker). 4. Use Experiment Tracking tools (MLflow/W&B). 5. Ensure deterministic computation (especially tricky with GPUs)."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "How do you track model lineage and provenance?",
+    "answer": "Use a 'Model Registry' linked to a 'Feature Store' and a 'Data Versioning' system (like DVC). Every model should point back to the exact commit, data snapshot, and training logs that produced it, enabling full auditability if a production model starts losing money."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "How would you deploy a model that must run daily across thousands of assets?",
+    "answer": "Use a 'Batch Orchestration' pattern: A daily trigger (Airflow) kicks off a distributed compute job (Spark/Ray). The job fetches the latest features from the Feature Store, performs inference in parallel across the asset universe, and writes results to a trade-order management system."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "What are the tradeoffs between batch inference and online inference?",
+    "answer": "Batch Inference (High throughput, Low cost) is for predictions that don't need instant response (e.g., daily forecasts). Online Inference (Low latency, High cost) is for real-time reactions (e.g., HFT/Intraday). In hedge funds, most 'Macro' models are batch, while 'Market-neutral' execution systems are online."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "How would you design a model rollback strategy?",
+    "answer": "1. Versioning: Always keep previous model artifacts available. 2. Monitoring: Set clear 'Redline' metrics (e.g., p99 latency or portfolio risk). 3. Automated Rollback: If health checks fail during a canary rollout, the load balancer automatically reverts to the 'Stable' version."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "How do you monitor model health after deployment?",
+    "answer": "1. System Health: CPU/GPU usage, Latency. 2. Data Health: Feature distribution shifts (KL-Divergence). 3. Prediction Health: Confidence scores, output drift. 4. Business Health: PnL, Sharpe, Attribution of gains vs. market noise."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "How do you detect model drift?",
+    "answer": "Model drift (or concept drift) is detected by comparing the distribution of current predictions against training predictions (e.g., using Kolmogorov-Smirnov tests). In finance, we also track 'Residual Drift'—if the model's error continuously increases, the underlying market relationship has changed."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "What metrics indicate a silent model failure?",
+    "answer": "1. Zero variance in output (model predicts the same value for everything). 2. Sudden change in feature importance ranking. 3. Input validation errors (NaNs/Nulls). 4. A decorrelation between expected and actual market movements that doesn't trigger a hard 'error'."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "How would you design canary deployments for ML models?",
+    "answer": "Direct 1-5% of traffic/assets to the new model. Compare 'Shadow PnL' and risk metrics between the canary and control. This allows you to verify performance in a live market environment with minimal capital at risk."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "How do you manage model versioning?",
+    "answer": "Use Semantic Versioning (v1.2.3) for model logic and unique hash-based IDs (UUIDs) for individual weights/artifacts. Store metadata (Author, Date, Commit, Data-Source) in a central database or Model Registry for easy retrieval and comparison."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "What logging is necessary to debug ML pipelines?",
+    "answer": "Log input raw features, transformed features, model parameters, prediction scores, and intermediate calculation steps. For financial models, also log the 'Context' (market volatility at time of inference) to understand high-error scenarios."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "How do you design feature reproducibility guarantees?",
+    "answer": "Implement a 'Feature Store' where the logic for a feature (e.g., 30-day moving average) is written once and shared between research (offline) and production (online). This eliminates the need to 're-implement' math, which is the #1 source of model bugs."
+  },
+  {
+    "theme": "ML Systems & Production",
+    "question": "What would an ML production incident postmortem include?",
+    "answer": "1. Timeline (Detection to Resolution). 2. Root Cause (Data error, Code bug, Regime shift). 3. Impact Assessment (Financial loss, Risk limit breaches). 4. Corrective Actions (Preventative tests, better monitoring). 5. Lessons learned."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "What components are essential in a modern ML platform?",
+    "answer": "1. Data Lakehouse (Store). 2. Feature Store (Engineering). 3. Experiment Tracker (Research). 4. Compute Cluster (Training). 5. Model Registry (Governance). 6. Orchestrator (Workflows). 7. Monitoring & Alerting (Production)."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "How would you design a feature store?",
+    "answer": "A feature store needs: 1. Offline Store (Parquet/S3) for backtesting. 2. Online Store (Redis/Cassandra) for low-latency retrieval. 3. Metadata Layer to track versions and ownership. 4. Ingestion Engine to sync data between the two. 5. SDK for easy feature access in Python/Java."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "What architecture would support thousands of concurrent experiments?",
+    "answer": "Establish a 'Kubernetes-based' platform with auto-scaling GPU/CPU nodes. Use 'Spot Instances' for cost-efficiency. Implement a robust experiment tracker and a central file system (EFS/Lustre) so researchers can spin up isolated environments with shared data access."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "How do you build reproducible training pipelines?",
+    "answer": "Use 'Infrastructure as Code' (Terraform) to define environments and 'Workflow Orchestrators' (Kubeflow Pipelines/Airflow) to define the DAG. Ensure every step uses immutable data snapshots and specific container versions."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "How would you design an experiment tracking system?",
+    "answer": "The system should automatically log: 1. Code Commit. 2. Hyperparameters. 3. Training/Val Metrics. 4. Artifact Pointers (model weights). 5. Environment snapshot. It should allow for easy 'Diffing' between runs to see what change caused a 2% boost in IC."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "What metadata should be logged for every training run?",
+    "answer": "Dataset ID, commit hash, hardware type (V100/A100), execution time, peak memory usage, hyperparameters, loss curves, final metrics, and the identity of the researcher. This is essential for compliance and resource optimization."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "How do you ensure deterministic experiments across distributed clusters?",
+    "answer": "1. Fix seeds across all libraries (PyTorch, NumPy, Random). 2. Disable non-deterministic CuDNN algorithms. 3. Ensure data shuffling uses a consistent seed. 4. Use 'Deterministic Ops' in frameworks where possible. 5. Control for floating-point variation across different GPU architectures."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "How do you orchestrate distributed training jobs?",
+    "answer": "Use 'Ray' or 'PyTorch Distributed' (DDP). Ray is superior for institutional setups because it handles resource allocation, failure recovery, and diverse job types (reinforcement learning vs. supervised) seamlessly on top of Kubernetes."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "Compare Spark, Ray, and Kubernetes-based training pipelines.",
+    "answer": "Spark is for data-intensive processing (SQL/Tabular). Ray is for compute-intensive processing (Deep Learning/RL). Kubernetes is the underlying 'OS' that manages the infrastructure. Modern platforms run Spark-on-K8s for features and Ray-on-K8s for modeling."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "What are common bottlenecks in large-scale training pipelines?",
+    "answer": "1. I/O (Data loading being slower than GPU compute). 2. Network (Shuffle/Gradient sync latency). 3. Memory (OOM errors on large models). 4. Scheduling (Waiting for GPUs in a multi-tenant cluster)."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "How do you design a model registry?",
+    "answer": "A central service that manages the 'Model Inventory'. It tracks model status (Exp, Staging, Prod), facilitates human approvals, stores metrics for audit, and provides a 'Model Download API' that ensures production only gets validated artifacts."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "What role do workflow orchestration systems (Airflow, Prefect) play?",
+    "answer": "They manage the 'Gears' of the platform: scheduling data ingestion, triggering re-training jobs, running validation suites, and notifying teams of failures. They handle retries and complex dependencies between research and production tasks."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "How do you manage GPU scheduling across teams?",
+    "answer": "Use Kubernetes' 'Resource Quotas' and 'Priorities'. High-priority 'Production inference' or 'Urgent research' gets GPUs first, while 'Background exploratory' jobs are preemptible. Multi-Instance GPU (MIG) can also help by splitting large GPUs into smaller units."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "How do you reduce training costs while maintaining experiment velocity?",
+    "answer": "1. Use Spot/Preemptible instances. 2. Auto-scaling (turn off GPUs at night). 3. 'Early Stopping' to kill poor-performing experiments. 4. Model compression (distillation/quantization) to use smaller, cheaper GPUs for inference."
+  },
+  {
+    "theme": "Infrastructure & MLOps",
+    "question": "How would you design a research-to-production promotion pipeline?",
+    "answer": "1. PR review of code. 2. Integration Tests on a test dataset. 3. Compliance check (Risk limits). 4. Automated performance comparison (Must beat 'Stable' baseline). 5. Signed artifact move to 'Protected' Production Registry."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "Design a data pipeline ingesting global market data across decades.",
+    "answer": "1. Source Adapters (Reuters, Bloomberg). 2. Distributed Ingestion (Kafka/Event Hubs). 3. Delta Lake (ACID storage for history). 4. Normalization and Outlier rejection. 5. Resampling (Tick -> Bar). 6. Point-in-Time versioning. Scale with Spark to handle billions of ticks."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "How do you ensure data integrity and consistency?",
+    "answer": "Implement 'Expectations' (Great Expectations library): check for nulls, range violations, and logic errors (e.g., Close > High) at every pipeline step. Retain raw copies of data for easy 'backfilling' if a bug is found in the normalization logic."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "What challenges arise when working with tick-level financial data?",
+    "answer": "1. Volume (Millions of ticks/sec). 2. Non-alignment (different exchanges reporting at different times). 3. Noisy data (erroneous trades later cancelled). 4. Latency requirements for real-time features. Handling this requires specialized columnar storage and high-throughput streaming engines."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "How do you design incremental feature pipelines?",
+    "answer": "Use 'Stateful Stream Processing' (Flink/Spark Streaming) or 'Watermarking' to update features (like EMA) as new data arrives without recalculating the entire history. This is essential for low-latency production features."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "How does Spark handle distributed data processing?",
+    "answer": "Spark uses a 'Driver' to coordinate 'Executors'. Data is partitioned across nodes, and operations (Maps, Joins) are executed in parallel. Results are only 'Shuffled' (sent over network) when necessary, though shuffles are the main bottleneck."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "What problems does Ray solve compared to Spark?",
+    "answer": "Spark is optimized for rigid tabular dataflows. Ray is optimized for dynamic, arbitrary Python tasks. Ray excels at distributed state management (Actors), low-latency task scheduling, and diverse workloads (Simulation, RL, Training) that Spark's 'Map-Reduce' roots struggle with."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "What causes shuffle bottlenecks in distributed pipelines?",
+    "answer": "1. Data Skew (one node has 90% of a key's data). 2. High Cardinality joins. 3. Network congestion. 4. Poor serialization (using Python's pickle instead of Arrow). Mitigate by re-partitioning data or using 'broadcast joins' for small tables."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "How would you optimize a pipeline processing petabytes of data?",
+    "answer": "1. Columnar storage (Parquet/Zarr) with Predicate Pushdown. 2. Partitioning by day/region. 3. Aggressive caching. 4. Filter data as 'early' as possible in the DAG. 5. Use 'Compressed' data throughout the network transfer."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "How do you design scalable feature generation pipelines?",
+    "answer": "Decouple 'Feature Definition' (code) from 'Feature Execution' (compute). Use a library that allows researchers to write features in Python that can be compiled into high-performance C++/Rust or Spark-SQL automatically."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "How do you avoid training-serving skew?",
+    "answer": "Strict 'One Codebase' policy for features. Use the same JAR/Container for both. Additionally, implement 'Parity Tests'—periodically run the online code on offline data and ensure the outputs match to 6 decimal places."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "How do you manage feature versioning?",
+    "answer": "Append a version hash to every feature name in the Feature Store (e.g. `vol_30d_v2`). This allows old models to keep using v1 while newer models migrate to v2, preventing 'Breaking' changes in production."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "What strategies improve data locality in distributed training?",
+    "answer": "Ensure your training nodes are in the same 'Availability Zone' as your data storage. Use local NVMe caching to avoid repeated network hits to S3 during multiple epochs. Group data into larger 'Blobs' (TFRecord/WebDataset) to optimize block-level transfer."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "How would you build streaming features for real-time signals?",
+    "answer": "Use Kafka + Flink. Flink maintains a 'Stateful' window (e.g., mean price over 10s) and emits updates into a low-latency key-value store (Redis) which the model queries during inference."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "How do you detect data pipeline failures early?",
+    "answer": "Implement 'Unit tests' on data: check schema, check for missing values, check for unexpected 'Zeros'. Monitor 'Data Arrival Latency'—if market closed at 4 PM and data isn't in at 4:05 PM, fire an alert."
+  },
+  {
+    "theme": "Data Engineering",
+    "question": "How would you debug a pipeline that suddenly doubles runtime?",
+    "answer": "1. Check for 'Data Volume' spikes (more trades than usual?). 2. Identify the bottleneck stage in Spark UI (Look for the longest task). 3. Check for 'Hardware' failures (bad node). 4. Audit recent code changes for O(N^2) complexity bugs."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "How do you profile a slow ML training job?",
+    "answer": "1. System level: `nvidia-smi` (GPU), `htop` (CPU), `iostat` (Disk). 2. Framework level: PyTorch Profiler / TensorBoard. 3. Code level: `cProfile`. Look for 'GPU Under-utilization' which usually points to a data-loader bottleneck."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "What tools help identify CPU, memory, and GPU bottlenecks?",
+    "answer": "PyTorch Profiler (shows kernel time/data transfer), Weights & Biases (resource usage over time), nsys (NVIDIA System Profiler for deep GPU traces), and standard memory profilers for Python."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "What causes data loader bottlenecks?",
+    "answer": "Slow disk I/O, heavy transformations being done on the CPU per-batch (like decompression/normalization), or 'Synchronous' loading where the GPU waits for the CPU to finish. Mitigation: `num_workers > 0` and `pin_memory=True` in PyTorch."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "How do you optimize GPU utilization?",
+    "answer": "1. Increase Batch Size until VRAM is full. 2. Use `torch.compile`. 3. Mixed Precision (FP16/BF16). 4. Multi-worker data loading. 5. Fuse operations (e.g. Bias + ReLU) to reduce memory trips."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "What techniques reduce training memory usage?",
+    "answer": "1. Gradient Accumulation (simulates large batch with small memory). 2. Gradient Checkpointing (re-computes activations during backward pass). 3. Optimizer state sharding (ZeRO). 4. 8-bit optimizers (bitsandbytes)."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "When would you use mixed precision training?",
+    "answer": "Almost always! Use FP16 or BF16 for tensors/gradients while keeping weights in FP32. It provides 2-3x speedup on Tensor Core GPUs and significantly reduces memory usage without sacrificing accuracy, provided 'Loss Scaling' is handled."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "How do you improve input pipeline throughput?",
+    "answer": "Pre-process data into binary formats (TFRecord/Parquet). Use pre-fetching and multi-threading. For massive datasets, use 'Remote Caching' so data stays on the node for future epochs."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "When is vectorization more effective than parallelization?",
+    "answer": "Vectorization (SIMD) is better for 'Single Instruction, Multiple Data' tasks like matrix multiplication where hardware can do it in one sweep. Parallelization (Multiprocessing) is better for heterogeneous tasks like processing different asset types independently. You always want both."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "How do you optimize large matrix operations?",
+    "answer": "Use optimized libraries (BLAS/LAPACK/cuBLAS). Ensure matrices are 'Contingous' in memory for cache hits. For sparse matrices, use CSR/CSC formats to avoid calculating zeros."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "What techniques accelerate distributed training?",
+    "answer": "1. All-Reduce with NCCL (High-speed gradient sync). 2. RDMA for zero-copy across nodes. 3. Pipelined Model Parallelism (splitting model layers across GPUs). 4. Data sharding (splitting the dataset)."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "What are common inefficiencies in PyTorch training loops?",
+    "answer": "1. Moving data between CPU and GPU inside the loop (`.to('cuda')` should be minimal). 2. Redundant logging every step. 3. Python overhead—mitigate with `torch.compile` which fuses Python nodes into C++ kernels."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "When does CUDA-level optimization become necessary?",
+    "answer": "When you have a completely 'Unique' operation (like a custom financial Attention mechanism) that can't be well-expressed with standard PyTorch ops, causing significant latency or memory overhead due to many small kernels."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "How would you optimize feature extraction pipelines?",
+    "answer": "Write them in C++ or Rust and use Cython/PyO3 to call them from Python. Vectorize all time series rolling window operations. Ensure data is stored in the cloud in a way that minimizes per-column network transfer."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "How do you minimize latency in model inference systems?",
+    "answer": "1. Quantization (INT8). 2. Model Pruning. 3. Serving via specialized runtimes (ONNX/TensorRT). 4. Static shape compilation. 5. KV-Caching for sequence models."
+  },
+  {
+    "theme": "Performance & Systems",
+    "question": "What tradeoffs exist between throughput and latency?",
+    "answer": "High Throughput (Batching) is cheaper and processes more data per second but each item waits longer. Low Latency (Single-item) is faster for a specific request but wastes hardware capacity and has much higher cost-per-inference."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "How do you translate a research paper into production code?",
+    "answer": "1. Implement a 'Naive baseline' to understand the core math. 2. Verify results against paper benchmarks. 3. Modularize the implementation (separate math from I/O). 4. Optimize for production constraints (speed/scale). 5. Add extensive documentation and tests for edge cases."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "What questions should you ask when evaluating a new ML idea?",
+    "answer": "1. What is the baseline? 2. Is the lift statistically significant? 3. Does it violate chronological order (leakage)? 4. What is the complexity cost vs. gain? 5. Does the math align with economic reality?"
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "How do you determine whether a research idea is worth productionizing?",
+    "answer": "Perform a 'Risk-Reward' analysis. A model with 5% better accuracy but 10x higher infrastructure cost or lack of interpretability might be a net negative in a high-stakes hedge fund environment."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "How do you work effectively with research scientists vs engineers?",
+    "answer": "Act as the 'Translator'. Understand the researcher's 'Why' (the math) and the engineer's 'How' (the infra). Build tools that allow researchers to experiment freely while automatically enforcing the quality standards required by engineers."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "How do you balance rapid experimentation vs code quality?",
+    "answer": "Use a 'Two-Phase' approach. Phase 1 (Research): Notebooks and quick scripts, but with versioned data. Phase 2 (Prod): Refactor into tested, modular services once the idea is proven. Never skip Phase 2 before going live."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "What practices improve research reproducibility?",
+    "answer": "Mandatory 'Experiment manifest' for every run, central data versioning, consistent container environments across and a cultural emphasis on 'Reproducibility Review'—where another person must be able to run and match your results."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "What are the biggest challenges in building a general-purpose AI investor?",
+    "answer": "1. Black Swan events (unpredictable history). 2. Reflexivity (the system's own trades change the market). 3. Competitive Arbitrage (signals disappear as others find them). 4. Extreme noise vs sparse signal."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "What modeling approaches might capture economic regime changes?",
+    "answer": "1. Hidden Markov Models. 2. Bayesian Online Change Point Detection. 3. Meta-learning (learning to adapt). 4. Incorporating 'Structural priors'—hard-coding economic rules that limit the model's search space."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "How would you combine economic theory and machine learning?",
+    "answer": "Use economic theory to define the 'Feature Space' and 'Constraints' (inductive bias) and use ML to learn the 'Non-linear interactions' within those constraints. This ensures the model is both powerful and economically sensible."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "How should ML systems adapt to changing market structure?",
+    "answer": "Implement 'Continuous Evaluation' and 'Adaptive Retraining'. Use weighting schemes that prioritize recent data or implement multi-expert models where different 'experts' are weighted based on the current regime."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "How do you detect when a model has stopped learning meaningful signals?",
+    "answer": "Monitor 'Out-of-Sample Decay'. If the model's IC on live data continuously underperforms its backtest for a sustained period, the signal is likely dead or the model has overfit a bygone era."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "How would you structure the ML stack for a quantitative hedge fund?",
+    "answer": "A core 'Data Engine' for time-series, a 'Feature Lab' for shared engineering, an 'Experiment Cluster' for high-velocity research, and a 'Risk-Aware Serving Layer' that validates all trades against institutional constraints."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "What research directions in ML are most promising for finance?",
+    "answer": "1. Deep Reinforcement Learning for execution. 2. Large Model context windows for processing huge macro datasets. 3. Probabilistic programming for better uncertainty estimation. 4. Knowledge-graph-augmented LLMs for causal reasoning."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "How should teams balance interpretability vs predictive power?",
+    "answer": "Prioritize 'Accountability'. If a black-box model is 2% better but we can't explain why it's selling, we can't manage its risk. Use 'Glass-Box' models (like EBMs) or heavy SHAP analysis to ensure power doesn't come at the cost of control."
+  },
+  {
+    "theme": "Collaboration & Leadership",
+    "question": "If you joined AIA Labs, what ML platform improvements would you prioritize first?",
+    "answer": "1. Unified 'Point-in-Time' Feature Store to eliminate leakage bugs. 2. Automated Backtesting-to-Production CI/CD. 3. 'Self-Service' GPU clusters with pre-configured research environments. 4. Institutionalizing SHAP/LIME for every model."
+  }
+]
