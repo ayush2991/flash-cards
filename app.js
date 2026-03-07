@@ -150,6 +150,52 @@ function updateControls() {
     els.progressBarFill.style.width = `${progressPercent}%`;
 }
 
+// Logic: Theme (Light/Dark)
+function initTheme() {
+    const savedTheme = localStorage.getItem('app_theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyTheme = (theme) => {
+        if (theme === 'light') {
+            document.documentElement.classList.add('light-mode');
+            els.sunIcon?.classList.add('hidden');
+            els.moonIcon?.classList.remove('hidden');
+        } else {
+            document.documentElement.classList.remove('light-mode');
+            els.sunIcon?.classList.remove('hidden');
+            els.moonIcon?.classList.add('hidden');
+        }
+    };
+
+    if (savedTheme) {
+        applyTheme(savedTheme);
+    } else {
+        applyTheme(systemPrefersDark.matches ? 'dark' : 'light');
+    }
+
+    // Listen for system changes
+    systemPrefersDark.addEventListener('change', (e) => {
+        if (!localStorage.getItem('app_theme')) {
+            applyTheme(e.matches ? 'dark' : 'light');
+        }
+    });
+}
+
+function toggleTheme() {
+    const isLight = document.documentElement.classList.toggle('light-mode');
+    const newTheme = isLight ? 'light' : 'dark';
+    localStorage.setItem('app_theme', newTheme);
+
+    // Update icons
+    if (isLight) {
+        els.sunIcon?.classList.add('hidden');
+        els.moonIcon?.classList.remove('hidden');
+    } else {
+        els.sunIcon?.classList.remove('hidden');
+        els.moonIcon?.classList.add('hidden');
+    }
+}
+
 function flipCard() {
     if (!currentTheme) return;
     els.flashcard.classList.toggle('flipped');
@@ -464,8 +510,14 @@ async function init() {
             generateLoadingView: document.getElementById('generate-loading-view'),
             generateStatusTitle: document.getElementById('generate-status-title'),
             generateStatusText: document.getElementById('generate-status-text'),
-            generateProgressFill: document.getElementById('generate-progress-fill')
+            generateProgressFill: document.getElementById('generate-progress-fill'),
+            themeToggleBtn: document.getElementById('theme-toggle-btn'),
+            sunIcon: document.querySelector('.sun-icon'),
+            moonIcon: document.querySelector('.moon-icon')
         };
+
+        // Initialize Theme
+        initTheme();
 
         // Pre-load marked for snappy first render
         ensureMarkedLoaded();
@@ -487,6 +539,7 @@ async function init() {
         if (els.clearCacheBtn) els.clearCacheBtn.addEventListener('click', clearCache);
         if (els.closePanelBtn) els.closePanelBtn.addEventListener('click', closeAIPanel);
         if (els.regenerateBtn) els.regenerateBtn.addEventListener('click', () => showAIInsight(true));
+        if (els.themeToggleBtn) els.themeToggleBtn.addEventListener('click', toggleTheme);
 
         if (els.jobUrlBtn) els.jobUrlBtn.addEventListener('click', () => {
             els.generateErrorMsg.classList.add('hidden');
