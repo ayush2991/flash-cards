@@ -88,9 +88,12 @@ async function loadQuestionBank(bankId) {
 // Helper: Format AI markdown
 function formatAIResponse(text) {
     if (!text) return '';
+    // Handle literal \n strings that might come from JSON or AI responses
+    const unescaped = text.replace(/\\n/g, '\n');
+
     // Enhanced pre-processing: Add newlines before numerical points (e.g., "1.", "2.")
     // to ensure 'marked' detects them as proper list items even in single-line strings.
-    const preprocessed = text.replace(/([.!?])\s+(\d+\.\s+)/g, '$1\n$2');
+    const preprocessed = unescaped.replace(/([.!?])\s+(\d+\.\s+)/g, '$1\n$2');
 
     let html = preprocessed.replace(/\n/g, '<br>');
     if (window.marked) {
@@ -273,11 +276,24 @@ function loadFontSizes() {
 }
 
 function adjustFontSizes(delta) {
-    const styles = getComputedStyle(document.documentElement);
-    const q = parseFloat(styles.getPropertyValue('--question-size')) || 1.55;
-    const a = parseFloat(styles.getPropertyValue('--answer-size')) || 1.25;
-    const nextQ = Math.min(Math.max(q + delta, FONT_LIMITS.min), FONT_LIMITS.max);
-    const nextA = Math.min(Math.max(a + delta, FONT_LIMITS.min), FONT_LIMITS.max);
+    const root = document.documentElement;
+    const styles = getComputedStyle(root);
+
+    // Helper to get value in rem
+    const getRem = (prop, fallback) => {
+        const val = styles.getPropertyValue(prop).trim();
+        if (!val) return fallback;
+        if (val.endsWith('rem')) return parseFloat(val);
+        if (val.endsWith('px')) return parseFloat(val) / 16; // Convert px to rem
+        return parseFloat(val) || fallback;
+    };
+
+    const q = getRem('--question-size', 1.55);
+    const a = getRem('--answer-size', 1.05);
+
+    const nextQ = Math.round(Math.min(Math.max(q + delta, FONT_LIMITS.min), FONT_LIMITS.max) * 100) / 100;
+    const nextA = Math.round(Math.min(Math.max(a + delta, FONT_LIMITS.min), FONT_LIMITS.max) * 100) / 100;
+
     console.debug(`Adjusted font sizes by ${delta}. New sizes - Q: ${nextQ}rem, A: ${nextA}rem`);
     applyFontSizes(nextQ, nextA);
     localStorage.setItem('question_font_size', String(nextQ));

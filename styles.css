@@ -391,6 +391,17 @@ nav button.active {
   width: 100%;
 }
 
+#answer-text p {
+  font-size: inherit;
+  margin-bottom: 1rem;
+}
+
+#answer-text h1, #answer-text h2, #answer-text h3 {
+  font-size: 1.2em;
+  color: var(--primary);
+  margin: 1.5rem 0 0.5rem;
+}
+
 #answer-text ul, #answer-text ol {
   padding-left: 1.5rem;
   margin: 1rem 0;

@@ -16,5 +16,11 @@
     "name": "OpenAI Applied AI Retrieval & Search",
     "description": "Deep dive into Information Retrieval, RAG, and Search Infra.",
     "path": "data/retrieval-search.json"
-  }  
+  },
+  {
+    "id": "two-sigma-genai",
+    "name": "Two Sigma Quantitative Software Engineer - Generative AI",
+    "description": "Quantitative Software Engineer \u2013 Generative AI at Two Sigma.",
+    "path": "data/two-sigma-genai.json"
+  }
 ]
