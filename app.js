@@ -15,12 +15,15 @@ const SWIPE = { threshold: 50, restraint: 60 };
 
 // Logic: Dynamic Loading
 async function loadRegistry() {
+    console.log("Loading question banks registry...");
     try {
         const response = await fetch('data/banks.json');
         questionBanksRegistry = await response.json();
+        console.log(`Loaded ${questionBanksRegistry.length} banks from registry.`);
 
         if (els.bankSelect) {
             els.bankSelect.innerHTML = '';
+            // Add a "Select a bank" placeholder if needed, or just load the first one
             questionBanksRegistry.forEach(bank => {
                 const option = document.createElement('option');
                 option.value = bank.id;
@@ -28,15 +31,21 @@ async function loadRegistry() {
                 els.bankSelect.appendChild(option);
             });
         }
+        return questionBanksRegistry;
     } catch (error) {
         console.error("Failed to load registry:", error);
+        return [];
     }
 }
 
 async function loadQuestionBank(bankId) {
     const bank = questionBanksRegistry.find(b => b.id === bankId);
-    if (!bank) return;
+    if (!bank) {
+        console.warn(`Attempted to load unknown bank: ${bankId}`);
+        return;
+    }
 
+    console.log(`Loading question bank: ${bankId} (${bank.name})`);
     try {
         if (bank.data) {
             flashcardsData = bank.data;
@@ -47,8 +56,14 @@ async function loadQuestionBank(bankId) {
         currentBankId = bankId;
         localStorage.setItem('last_bank_id', bankId);
 
+        // Update the select value to match the loaded bank
+        if (els.bankSelect) {
+            els.bankSelect.value = bankId;
+        }
+
         // Build themes
         const themes = [...new Set(flashcardsData.map(card => card.theme))];
+        console.debug(`Themes found for ${bankId}:`, themes);
         if (els.themeNav) {
             els.themeNav.innerHTML = ''; // Clear
             themes.forEach(theme => {
@@ -62,6 +77,7 @@ async function loadQuestionBank(bankId) {
             });
         }
 
+        console.log(`Successfully loaded question bank ${bankId} with ${flashcardsData.length} cards.`);
         // Set first theme
         if (themes.length > 0) setTheme(themes[0]);
     } catch (error) {
@@ -104,8 +120,10 @@ function renderMath(element) {
 
 // Logic: Theme Switching
 function setTheme(theme) {
+    console.log(`Setting theme: ${theme}`);
     currentTheme = theme;
     filteredCards = flashcardsData.filter(card => card.theme === theme);
+    console.debug(`Filtered down to ${filteredCards.length} cards for theme: ${theme}`);
     currentCardIndex = getSavedCardIndex();
 
     // Update active state in UI
@@ -115,6 +133,7 @@ function setTheme(theme) {
     });
 
     renderCard();
+    console.log(`Theme switched to "${theme}". Ready to practice.`);
 }
 
 // Logic: Rendering
@@ -129,6 +148,7 @@ async function renderCard() {
         return;
     }
     const currentCard = filteredCards[currentCardIndex];
+    console.debug(`Rendering card at index: ${currentCardIndex}`);
 
     els.flashcard.classList.remove('flipped');
 
@@ -172,8 +192,10 @@ function initTheme() {
     const savedTheme = localStorage.getItem('app_theme');
     const hasOverride = localStorage.getItem('app_theme_override') === 'true';
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    console.debug(`Initializing theme. Saved: ${savedTheme}, Override: ${hasOverride}`);
 
     const applyTheme = (theme) => {
+        console.log(`Applying theme: ${theme}`);
         if (theme === 'light') {
             document.documentElement.classList.add('light-mode');
             els.sunIcon?.classList.add('hidden');
@@ -202,6 +224,7 @@ function initTheme() {
 function toggleTheme() {
     const isLight = document.documentElement.classList.toggle('light-mode');
     const newTheme = isLight ? 'light' : 'dark';
+    console.log(`Toggled theme to: ${newTheme}`);
     localStorage.setItem('app_theme', newTheme);
     localStorage.setItem('app_theme_override', 'true');
 
@@ -255,6 +278,7 @@ function adjustFontSizes(delta) {
     const a = parseFloat(styles.getPropertyValue('--answer-size')) || 1.25;
     const nextQ = Math.min(Math.max(q + delta, FONT_LIMITS.min), FONT_LIMITS.max);
     const nextA = Math.min(Math.max(a + delta, FONT_LIMITS.min), FONT_LIMITS.max);
+    console.debug(`Adjusted font sizes by ${delta}. New sizes - Q: ${nextQ}rem, A: ${nextA}rem`);
     applyFontSizes(nextQ, nextA);
     localStorage.setItem('question_font_size', String(nextQ));
     localStorage.setItem('answer_font_size', String(nextA));
@@ -262,6 +286,7 @@ function adjustFontSizes(delta) {
 
 function toggleFocusMode() {
     const isOn = document.body.classList.toggle('focus-mode');
+    console.log(`Focus mode toggled: ${isOn}`);
     localStorage.setItem('focus_mode', isOn ? 'true' : 'false');
     if (els.focusModeBtn) els.focusModeBtn.classList.toggle('active', isOn);
 }
@@ -385,14 +410,19 @@ async function ensureMarkedLoaded() {
 async function showAIInsight(forceRefresh = false) {
     const apiKey = localStorage.getItem('gemini_api_key') || sessionStorage.getItem('gemini_api_key');
     if (!apiKey) {
+        console.warn("AI Insight requested but API key is missing.");
         alert('Please provide a Gemini API Key in Settings first.');
         toggleModal(els.settingsModal, true);
         return;
     }
 
-    if (!currentTheme || filteredCards.length === 0) return;
+    if (!currentTheme || filteredCards.length === 0) {
+        console.warn("AI Insight requested but no theme is active.");
+        return;
+    }
 
     const currentCard = filteredCards[currentCardIndex];
+    console.log(`Requesting AI insight for card: "${currentCard.question.substring(0, 30)}..."`);
     if (window.innerWidth >= 1024) {
         els.aiPanel.classList.remove('hidden-panel');
     } else {
@@ -420,7 +450,7 @@ async function showAIInsight(forceRefresh = false) {
             console.log("Serving from cache:", currentCard.question);
             return;
         } catch (e) {
-            console.error("Cache parse error:", e);
+            console.error(`Failed to parse AI cache for card: "${currentCard.question.substring(0, 30)}..."`, e);
             localStorage.removeItem(cacheKey);
         }
     }
@@ -463,8 +493,9 @@ Please provide a "Guided Answer" that builds on this reference. Explain the "why
         renderMath(els.aiResponseContainer);
         els.aiLoading.classList.add('hidden');
         els.aiResponseContainer.classList.remove('hidden');
+        console.log(`AI insight received successfully for "${currentCard.question.substring(0, 30)}..."`);
     } catch (error) {
-        console.error("Gemini Unified SDK Error:", error);
+        console.error(`Gemini AI generation failed for card: "${currentCard.question.substring(0, 30)}..."`, error);
         els.aiLoading.classList.add('hidden');
         els.aiResponseContainer.classList.remove('hidden');
         els.aiResponseContainer.innerHTML = `<p style="color: #ef4444;">Guided Answer Error: ${error.message}</p>`;
@@ -475,24 +506,34 @@ Please provide a "Guided Answer" that builds on this reference. Explain the "why
 async function fetchJobDescription(url) {
     if (!url.startsWith('http')) return url; // Treat as direct topic text if not a URL
 
-    const maxRetries = 2;
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            if (!localStorage.getItem('allorigins_ack')) {
-                const ok = confirm("This will fetch the URL via a third-party proxy (allorigins.win). Continue?");
-                if (!ok) throw new Error("Fetch cancelled by user.");
-                localStorage.setItem('allorigins_ack', 'true');
-            }
+    const proxies = [
+        `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+        `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`
+    ];
 
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 10000);
-            const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {
-                signal: controller.signal
-            });
-            clearTimeout(timeout);
-            if (!response.ok) throw new Error("Failed to fetch");
-            const data = await response.json();
-            const html = data.contents;
+    if (!localStorage.getItem('allorigins_ack')) {
+        const ok = confirm("This will fetch the URL via a third-party proxy to bypass CORS restrictions. Continue?");
+        if (!ok) throw new Error("Fetch cancelled by user.");
+        localStorage.setItem('allorigins_ack', 'true');
+    }
+
+    for (let i = 0; i < proxies.length; i++) {
+        const proxyUrl = proxies[i];
+        console.debug(`Attempting to fetch content via proxy ${i + 1}: ${proxyUrl}`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
+        try {
+            const response = await fetch(proxyUrl, { signal: controller.signal });
+            if (!response.ok) throw new Error(`Proxy ${i + 1} failed`);
+
+            let html = "";
+            if (proxyUrl.includes("allorigins")) {
+                const data = await response.json();
+                html = data.contents;
+            } else {
+                html = await response.text();
+            }
 
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
@@ -501,11 +542,18 @@ async function fetchJobDescription(url) {
             removes.forEach(s => s.remove());
 
             const text = doc.body.textContent.replace(/\s+/g, ' ').trim();
-            if (text.length > 100) return text;
+            if (text.length > 100) {
+                clearTimeout(timeout);
+                return text;
+            }
             throw new Error("Text too short or missing");
         } catch (e) {
-            console.error("Fetch try failed:", e);
-            if (i === maxRetries - 1) throw new Error("Failed to securely fetch content from URL. You may need to paste the text directly.");
+            console.warn(`Proxy ${i + 1} (${proxyUrl}) failed to fetch or returned too little content.`, e);
+            clearTimeout(timeout);
+            if (i === proxies.length - 1) {
+                console.error(`All proxies failed to fetch content for URL: ${url}`);
+                throw new Error("Failed to securely fetch content from URL. You may need to paste the text directly.");
+            }
         }
     }
 }
@@ -513,6 +561,7 @@ async function fetchJobDescription(url) {
 async function startJobUrlGeneration() {
     const apiKey = localStorage.getItem('gemini_api_key') || sessionStorage.getItem('gemini_api_key');
     if (!apiKey) {
+        console.warn("Generation requested but API key is missing.");
         alert('Please provide a Gemini API Key in Settings first.');
         toggleModal(els.generateModal, false);
         toggleModal(els.settingsModal, true);
@@ -521,10 +570,13 @@ async function startJobUrlGeneration() {
 
     const inputVal = els.generateSourceInput.value.trim();
     if (!inputVal) {
+        console.warn("Generation requested with empty input.");
         els.generateErrorMsg.textContent = "Please enter a URL or topic.";
         els.generateErrorMsg.classList.remove('hidden');
         return;
     }
+
+    console.log(`Starting AI generation for: ${inputVal}`);
 
     els.generateErrorMsg.classList.add('hidden');
     els.generateInputView.classList.add('hidden');
@@ -595,6 +647,7 @@ ${textContext.substring(0, 15000)}`;
         els.bankSelect.value = newBankId;
         await loadQuestionBank(newBankId);
 
+        console.log(`Successfully generated deck: ${newBankName} (${newFlashcards.length} cards)`);
         toggleModal(els.generateModal, false);
 
         els.generateSourceInput.value = '';
@@ -602,7 +655,7 @@ ${textContext.substring(0, 15000)}`;
         els.generateLoadingView.classList.add('hidden');
 
     } catch (e) {
-        console.error("Generation error:", e);
+        console.error(`Flashcard deck generation failed for: ${inputVal}`, e);
         els.generateErrorMsg.textContent = "Error: " + e.message;
         els.generateErrorMsg.classList.remove('hidden');
         els.generateInputView.classList.remove('hidden');
@@ -824,10 +877,14 @@ async function init() {
         });
 
         // Auto-select first bank or last used bank
-        const lastBankId = localStorage.getItem('last_bank_id') || (questionBanksRegistry[0] ? questionBanksRegistry[0].id : null);
-        if (lastBankId) {
-            els.bankSelect.value = lastBankId;
-            await loadQuestionBank(lastBankId);
+        const lastBankId = localStorage.getItem('last_bank_id');
+        const initialBankId = lastBankId && questionBanksRegistry.some(b => b.id === lastBankId)
+            ? lastBankId
+            : (questionBanksRegistry[0] ? questionBanksRegistry[0].id : null);
+
+        if (initialBankId) {
+            console.log(`Initial bank selection: ${initialBankId}`);
+            await loadQuestionBank(initialBankId);
         }
 
         showOnboardingIfNeeded();
